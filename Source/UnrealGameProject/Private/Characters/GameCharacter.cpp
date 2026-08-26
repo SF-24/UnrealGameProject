@@ -74,7 +74,6 @@ void AGameCharacter::Look(const FInputActionValue& Value)
 void AGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
