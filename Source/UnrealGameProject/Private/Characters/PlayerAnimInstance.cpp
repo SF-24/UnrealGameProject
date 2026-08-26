@@ -25,5 +25,6 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		// Get the ground speed square if the component variable is not null
 		GroundSpeedSquared = UKismetMathLibrary::VSizeXYSquared(CharacterMovementComponent->Velocity);
+		HasVerticalVelocity = CharacterMovementComponent->IsFalling(); //CharacterMovementComponent->Velocity.Z != 0;
 	}
 }

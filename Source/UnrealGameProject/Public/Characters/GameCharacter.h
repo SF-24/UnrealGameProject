@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* LookInputAction;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* JumpInputAction;
+
 	
 protected:
 	virtual void BeginPlay() override;

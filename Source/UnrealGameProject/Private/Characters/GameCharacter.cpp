@@ -17,6 +17,11 @@ AGameCharacter::AGameCharacter()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 	
+	// 420 = default, was 650, then 520
+	GetCharacterMovement()->JumpZVelocity = 520.0f;
+	// Allows moving the character while jumping. Default: 0.05, then 0.5
+	GetCharacterMovement()->AirControl = 0.5f;
+	
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 400.0f, 0.0f); // Was initially 360 degrees
 	
@@ -79,6 +84,9 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(MovementInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Move);
 		EnhancedInputComponent->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Look);
+		
+		// Trigger Jump when pressed
+	    EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	}
 }
 

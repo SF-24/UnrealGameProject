@@ -25,4 +25,7 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float GroundSpeedSquared;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool HasVerticalVelocity;
 };
