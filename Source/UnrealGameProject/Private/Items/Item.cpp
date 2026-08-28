@@ -4,6 +4,7 @@
 #include "Items/Item.h"
 
 #include "Components/SphereComponent.h"
+#include "Characters/GameCharacter.h"
 
 // Sets default values
 AItem::AItem()
@@ -45,18 +46,20 @@ float AItem::TransformedCos() const
 void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (GEngine)
+	AGameCharacter* Character = Cast<AGameCharacter>(OtherActor);
+	if (Character)
 	{
-		GEngine->AddOnScreenDebugMessage(1,5.f, FColor::Red, "Overlapped: " + OtherActor->GetName());
+		Character->SetOverlappingItem(this);
 	}
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (GEngine)
+	AGameCharacter* Character = Cast<AGameCharacter>(OtherActor);
+	if (Character)
 	{
-		GEngine->AddOnScreenDebugMessage(1,5.f, FColor::Green, "EndOverlap: " + OtherActor->GetName());
+		Character->SetOverlappingItem(nullptr);
 	}
 }
 
@@ -69,6 +72,6 @@ void AItem::Tick(float DeltaTime)
 	RunningTime+=DeltaTime;
 
 	float DeltaZ = Amplitude * FMath::Sin(RunningTime * TimeConstant); // Calculate difference in Z axis. Period = 2*pi/K
-	AddActorWorldOffset(FVector(0.f,0.f,DeltaZ));
+	// AddActorWorldOffset(FVector(0.f,0.f,DeltaZ));
 }
 

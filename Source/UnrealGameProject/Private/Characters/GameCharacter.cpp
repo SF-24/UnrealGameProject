@@ -8,6 +8,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Items/Item.h"
+#include "Items/Weapons/Weapon.h"
+#include "Animation/AnimMontage.h"
 
 AGameCharacter::AGameCharacter()
 {
@@ -47,6 +50,11 @@ void AGameCharacter::BeginPlay()
 	
 }
 
+void AGameCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
 void AGameCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D MoveVector = Value.Get<FVector2D>();
@@ -71,9 +79,56 @@ void AGameCharacter::Look(const FInputActionValue& Value)
 	AddControllerYawInput(LookAxisVector.X);
 }
 
-void AGameCharacter::Tick(float DeltaTime)
+void AGameCharacter::InteractKeyPressed(const FInputActionValue& Value)
 {
-	Super::Tick(DeltaTime);
+	if (AWeapon* EquippedWeapon = Cast<AWeapon>(EquippedItem))
+	{
+		EquippedWeapon->Unequip();	
+	}
+	
+	if (AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem))
+	{
+		EquippedItem = OverlappingWeapon;
+		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"));
+		CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
+	}
+}
+
+void AGameCharacter::Attack(const FInputActionValue& Value)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage, 1.5f);
+		uint8 Selection = FMath::RandRange(0,1);
+		FName SectionName = FName();
+		switch (Selection)
+		{
+		case 0:
+			SectionName = FName("Attack1");
+			break;
+		case 1:
+			SectionName = FName("Attack2");
+			break;
+		case 2:
+			SectionName = FName("Attack3");
+			break;
+		default: 
+			return;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+// Make the function inline (compile with actual code at runtime)
+FORCEINLINE void AGameCharacter::SetOverlappingItem(AItem* Item)
+{
+	OverlappingItem = Item;
+}
+
+ECharacterState AGameCharacter::GetCharacterState() const
+{
+	return CharacterState;
 }
 
 void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -86,6 +141,12 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		
 		// Trigger Jump when pressed
 	    EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		
+		// Trigger equip when pressed
+		EnhancedInputComponent->BindAction(EquipInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::InteractKeyPressed);
+		
+		// Trigger on attack
+		EnhancedInputComponent->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Attack);
 	}
 }
 

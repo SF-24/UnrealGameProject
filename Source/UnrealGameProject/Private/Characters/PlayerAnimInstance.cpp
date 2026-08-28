@@ -27,4 +27,9 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		GroundSpeedSquared = UKismetMathLibrary::VSizeXYSquared(CharacterMovementComponent->Velocity);
 		HasVerticalVelocity = CharacterMovementComponent->IsFalling(); //CharacterMovementComponent->Velocity.Z != 0;
 	}
+	
+	if (PlayerCharacter)
+	{
+		CharacterState = PlayerCharacter->GetCharacterState();
+	}
 }

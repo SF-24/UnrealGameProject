@@ -26,12 +26,16 @@ protected:
 	float TransformedCos() const;
 	
 	UFUNCTION()
-	void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	UFUNCTION()
-	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Mesh")
+	UStaticMeshComponent* ItemMesh;
 	
 private:	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"), Category="Mesh")
 	float RunningTime;
 	
 	UPROPERTY(EditAnywhere,Category="Trig Parameters")
@@ -39,9 +43,6 @@ private:
 	UPROPERTY(EditAnywhere,Category="Trig Parameters")
 	float TimeConstant = 2.5f; // was 5.f
 	
-	UPROPERTY(VisibleAnywhere, Category="Mesh")
-	UStaticMeshComponent* ItemMesh;
-
 	UPROPERTY(VisibleAnywhere, Category="Mesh")
 	USphereComponent* SphereComponent;
 
