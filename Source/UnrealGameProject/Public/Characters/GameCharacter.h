@@ -43,16 +43,38 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* AttackInputAction;
 	
+	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category = "Input")
+	UInputAction* SecondaryAttackInputAction;
+	
 protected:
 	virtual void BeginPlay() override;
+	/**
+	 * Handle Input Functions 
+	 */
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void InteractKeyPressed(const FInputActionValue& Value);
+	void StartAttack(const FInputActionValue& Value);
 	void Attack(const FInputActionValue& Value);
+	void StartStrongAttack(const FInputActionValue& Value);
+	void StrongAttack(const FInputActionValue& Value);
+
+	/**
+	 * Handle Attack Montages: 
+	 */
+	void HandleAttackMontage(EAttackType AttackType, bool bIsAutoAttack);
+
+	UFUNCTION(BlueprintCallable)
+	void AttackEnd();
+	UFUNCTION(BlueprintCallable)
+	void AttackEndBlockAutoAttack();
+	bool CannotAutoAttack() const;
+	bool CannotAttack() const;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Category = "State")
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+	EActionState ActionState = EActionState::EAS_Unoccupied;
 	
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* CameraBoom;
@@ -78,4 +100,8 @@ private:
 public:
 	void SetOverlappingItem(AItem* Item);
 	ECharacterState GetCharacterState() const;
+	UFUNCTION(BlueprintCallable, Category = "State")
+	EActionState GetActionState() const;
+	UFUNCTION(BlueprintCallable, Category = "State")
+	void SetActionState(EActionState NewActionState);
 };

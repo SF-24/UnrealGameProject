@@ -94,15 +94,53 @@ void AGameCharacter::InteractKeyPressed(const FInputActionValue& Value)
 	}
 }
 
+void AGameCharacter::StartAttack(const FInputActionValue& Value)
+{
+	HandleAttackMontage(EAttackType::AT_MeleeNormal, false);
+}
+
 void AGameCharacter::Attack(const FInputActionValue& Value)
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AttackMontage)
+	HandleAttackMontage(EAttackType::AT_MeleeNormal, true);
+}
+
+void AGameCharacter::StartStrongAttack(const FInputActionValue& Value)
+{
+	HandleAttackMontage(EAttackType::AT_MeleeStrong, false);
+}
+
+void AGameCharacter::StrongAttack(const FInputActionValue& Value)
+{
+	HandleAttackMontage(EAttackType::AT_MeleeStrong, true);
+}
+
+void AGameCharacter::HandleAttackMontage(EAttackType AttackType, bool bIsAutoAttack)
+{
+	// If in an invalid state, cannot attack.
+	if (CannotAttack() || (bIsAutoAttack&&CannotAutoAttack()))
 	{
-		AnimInstance->Montage_Play(AttackMontage, 1.5f);
-		uint8 Selection = FMath::RandRange(0,1);
-		FName SectionName = FName();
-		switch (Selection)
+		return;
+	}
+	// Set attacking state
+	ActionState = EActionState::EAS_Attacking;
+	
+	// Handle the animation, based on attack type.
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	
+	// Return if the null check fails.
+	if (!AnimInstance || !AttackMontage)
+	{
+		return;
+	}
+	
+	FName SectionName = FName();
+	AnimInstance->Montage_Play(AttackMontage, 1.5f);
+	// const uint8 AttackSelection = FMath::RandRange(0,1);
+		
+	switch (AttackType)
+	{
+	case EAttackType::AT_MeleeNormal:
+		switch (FMath::RandRange(0,1))
 		{
 		case 0:
 			SectionName = FName("Attack1");
@@ -110,14 +148,19 @@ void AGameCharacter::Attack(const FInputActionValue& Value)
 		case 1:
 			SectionName = FName("Attack2");
 			break;
-		case 2:
-			SectionName = FName("Attack3");
-			break;
-		default: 
+		default:
 			return;
 		}
-		AnimInstance->Montage_JumpToSection(SectionName);
+		break;
+	case EAttackType::AT_MeleeStrong:
+		SectionName = FName("Attack3");
+		break;
+	default: 
+		return;
 	}
+	AnimInstance->Montage_JumpToSection(SectionName);
+
+
 }
 
 // Make the function inline (compile with actual code at runtime)
@@ -129,6 +172,16 @@ FORCEINLINE void AGameCharacter::SetOverlappingItem(AItem* Item)
 ECharacterState AGameCharacter::GetCharacterState() const
 {
 	return CharacterState;
+}
+
+EActionState AGameCharacter::GetActionState() const
+{
+	return ActionState;
+}
+
+void AGameCharacter::SetActionState(EActionState NewActionState)
+{
+	ActionState = NewActionState;
 }
 
 void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -146,7 +199,31 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(EquipInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::InteractKeyPressed);
 		
 		// Trigger on attack
+		EnhancedInputComponent->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AGameCharacter::StartAttack);
 		EnhancedInputComponent->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Attack);
+		EnhancedInputComponent->BindAction(SecondaryAttackInputAction, ETriggerEvent::Started, this, &AGameCharacter::StartStrongAttack);
+		EnhancedInputComponent->BindAction(SecondaryAttackInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::StrongAttack);
 	}
+}
+
+void AGameCharacter::AttackEnd() {
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AGameCharacter::AttackEndBlockAutoAttack() {
+	if (ActionState == EActionState::EAS_Attacking)
+	{
+		ActionState = EActionState::EAS_UnoccupiedDisableAutoAttack;
+	}
+}
+
+bool AGameCharacter::CannotAttack() const
+{
+	return ActionState != EActionState::EAS_Unoccupied || GetCharacterState() == ECharacterState::ECS_Unequipped;
+}
+
+bool AGameCharacter::CannotAutoAttack() const
+{
+	return (ActionState != EActionState::EAS_Unoccupied && ActionState != EActionState::EAS_UnoccupiedDisableAutoAttack) || GetCharacterState() == ECharacterState::ECS_Unequipped;
 }
 
