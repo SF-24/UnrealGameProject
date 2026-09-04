@@ -3,10 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BaseGizmos/GizmoElementShared.h"
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
 class USphereComponent;
+
+// Uint8, so no negative values are used.
+enum class EItemState : uint8
+{
+	EIS_Hovering,
+	EIS_Equipped
+};
 
 UCLASS()
 class UNREALGAMEPROJECT_API AItem : public AActor
@@ -33,6 +41,8 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Mesh")
 	UStaticMeshComponent* ItemMesh;
+	
+	EItemState ItemState = EItemState::EIS_Hovering;
 	
 private:	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"), Category="Mesh")

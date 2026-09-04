@@ -57,6 +57,11 @@ void AGameCharacter::Tick(float DeltaTime)
 
 void AGameCharacter::Move(const FInputActionValue& Value)
 {
+	if (ActionState==EActionState::EAS_Attacking || ActionState==EActionState::EAS_UnoccupiedDisableAutoAttack)
+	{
+		return;
+	}
+
 	const FVector2D MoveVector = Value.Get<FVector2D>();
 	
 	const FRotator Rotation = Controller->GetControlRotation();
@@ -71,6 +76,16 @@ void AGameCharacter::Move(const FInputActionValue& Value)
 	AddMovementInput(RightVector, MoveVector.X);   // Right, X Axis
 }
 
+void AGameCharacter::Jump(const FInputActionValue& Value)
+{
+	if (ActionState==EActionState::EAS_Attacking || ActionState==EActionState::EAS_UnoccupiedDisableAutoAttack)
+	{
+		return;
+	}
+	
+	ACharacter::Jump();
+}
+
 void AGameCharacter::Look(const FInputActionValue& Value)
 {
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -81,16 +96,36 @@ void AGameCharacter::Look(const FInputActionValue& Value)
 
 void AGameCharacter::InteractKeyPressed(const FInputActionValue& Value)
 {
-	if (AWeapon* EquippedWeapon = Cast<AWeapon>(EquippedItem))
+	// If an item is equipped, unequip it.
+	if (EquippedWeapon)
 	{
-		EquippedWeapon->Unequip();	
+		EquippedWeapon->Unequip();
+		EquippedWeapon=nullptr;
 	}
 	
+	// Pickup the item pickup
 	if (AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem))
 	{
-		EquippedItem = OverlappingWeapon;
+		EquippedWeapon = OverlappingWeapon;
 		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"));
 		CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
+		OverlappingWeapon = nullptr;
+	}
+}
+
+void AGameCharacter::DisarmKeyPressed(const FInputActionValue& Value)
+{
+	if (CanDisarm())
+	{
+		HandleEquipMontage("Unequip");
+		CharacterState=ECharacterState::ECS_Unequipped;
+		OverlappingItem=nullptr;
+	}
+	else if (CanArm())
+	{
+		HandleEquipMontage("Equip");
+		CharacterState=ECharacterState::ECS_EquippedOneHandedWeapon;
+		OverlappingItem=EquippedWeapon;
 	}
 }
 
@@ -159,8 +194,19 @@ void AGameCharacter::HandleAttackMontage(EAttackType AttackType, bool bIsAutoAtt
 		return;
 	}
 	AnimInstance->Montage_JumpToSection(SectionName);
+}
 
-
+void AGameCharacter::HandleEquipMontage(FName SectionName)
+{
+	if (EquipMontage)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance)
+		{
+			AnimInstance->Montage_Play(EquipMontage, 1.0f);
+			AnimInstance->Montage_JumpToSection(SectionName,EquipMontage);
+		}
+	}
 }
 
 // Make the function inline (compile with actual code at runtime)
@@ -193,7 +239,7 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Look);
 		
 		// Trigger Jump when pressed
-	    EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+	    EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Jump);
 		
 		// Trigger equip when pressed
 		EnhancedInputComponent->BindAction(EquipInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::InteractKeyPressed);
@@ -219,11 +265,21 @@ void AGameCharacter::AttackEndBlockAutoAttack() {
 
 bool AGameCharacter::CannotAttack() const
 {
-	return ActionState != EActionState::EAS_Unoccupied || GetCharacterState() == ECharacterState::ECS_Unequipped;
+	return (ActionState != EActionState::EAS_Unoccupied && ActionState != EActionState::EAS_UnoccupiedDisableAutoAttack) || GetCharacterState() == ECharacterState::ECS_Unequipped;
 }
 
 bool AGameCharacter::CannotAutoAttack() const
 {
-	return (ActionState != EActionState::EAS_Unoccupied && ActionState != EActionState::EAS_UnoccupiedDisableAutoAttack) || GetCharacterState() == ECharacterState::ECS_Unequipped;
+	return ActionState != EActionState::EAS_Unoccupied || GetCharacterState() == ECharacterState::ECS_Unequipped;
+}
+
+bool AGameCharacter::CanDisarm() const
+{
+	return ActionState == EActionState::EAS_Unoccupied && CharacterState!=ECharacterState::ECS_Unequipped;
+}
+
+bool AGameCharacter::CanArm() const
+{
+	return ActionState == EActionState::EAS_Unoccupied && CharacterState!=ECharacterState::ECS_EquippedOneHandedWeapon && EquippedWeapon;
 }
 

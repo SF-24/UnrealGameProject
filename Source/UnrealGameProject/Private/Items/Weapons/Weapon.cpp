@@ -17,14 +17,16 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	Super::OnSphereEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
 }
 
-void AWeapon::Equip(USceneComponent* InParent, FName InSocketName) const
+void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 {
 	if (InParent) {
 		ItemMesh->AttachToComponent(InParent,FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false), InSocketName);		
+		ItemState=EItemState::EIS_Equipped;
 	}
 }
 
-void AWeapon::Unequip() const
+void AWeapon::Unequip()
 {
 	ItemMesh->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule(EAttachLocation::KeepWorldPosition),false));
+	ItemState=EItemState::EIS_Hovering;
 }

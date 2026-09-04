@@ -13,6 +13,7 @@ class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
 class AItem;
+class AWeapon;
 class UAnimMontage;
 
 UCLASS()
@@ -52,8 +53,10 @@ protected:
 	 * Handle Input Functions 
 	 */
 	void Move(const FInputActionValue& Value);
+	void Jump(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void InteractKeyPressed(const FInputActionValue& Value);
+	void DisarmKeyPressed(const FInputActionValue& Value);
 	void StartAttack(const FInputActionValue& Value);
 	void Attack(const FInputActionValue& Value);
 	void StartStrongAttack(const FInputActionValue& Value);
@@ -63,12 +66,15 @@ protected:
 	 * Handle Attack Montages: 
 	 */
 	void HandleAttackMontage(EAttackType AttackType, bool bIsAutoAttack);
+	void HandleEquipMontage(FName SectionName);
 
 	UFUNCTION(BlueprintCallable)
 	void AttackEnd();
 	UFUNCTION(BlueprintCallable)
 	void AttackEndBlockAutoAttack();
 	bool CannotAutoAttack() const;
+	bool CanDisarm() const;
+	bool CanArm() const;
 	bool CannotAttack() const;
 
 private:
@@ -85,14 +91,17 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	AItem* OverlappingItem;
 
-	UPROPERTY(VisibleAnywhere)
-	AItem* EquippedItem;
+	UPROPERTY(VisibleAnywhere, Category="Weapon")
+	AWeapon* EquippedWeapon;
 	
 	/*
 	 * Animation montages:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Montages")
 	UAnimMontage* AttackMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Montages")
+	UAnimMontage* EquipMontage;
 	
 	UPROPERTY()
 	uint8 AttackComboSection = 0;

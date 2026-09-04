@@ -71,7 +71,9 @@ void AItem::Tick(float DeltaTime)
 
 	RunningTime+=DeltaTime;
 
-	float DeltaZ = Amplitude * FMath::Sin(RunningTime * TimeConstant); // Calculate difference in Z axis. Period = 2*pi/K
-	// AddActorWorldOffset(FVector(0.f,0.f,DeltaZ));
+	if (ItemState == EItemState::EIS_Hovering)
+	{
+		AddActorWorldOffset(FVector(0.f,0.f,TransformedSin()));	
+	}
 }
 
