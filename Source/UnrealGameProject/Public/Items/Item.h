@@ -44,6 +44,9 @@ protected:
 	
 	EItemState ItemState = EItemState::EIS_Hovering;
 	
+	UPROPERTY(VisibleAnywhere, Category="Mesh")
+	USphereComponent* SphereComponent;
+	
 private:	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"), Category="Mesh")
 	float RunningTime;
@@ -52,8 +55,4 @@ private:
 	float Amplitude = 0.5f; //0.25f;
 	UPROPERTY(EditAnywhere,Category="Trig Parameters")
 	float TimeConstant = 2.5f; // was 5.f
-	
-	UPROPERTY(VisibleAnywhere, Category="Mesh")
-	USphereComponent* SphereComponent;
-
 };

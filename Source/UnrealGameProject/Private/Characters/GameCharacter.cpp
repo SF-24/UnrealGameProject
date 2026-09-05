@@ -57,9 +57,17 @@ void AGameCharacter::Tick(float DeltaTime)
 
 void AGameCharacter::Move(const FInputActionValue& Value)
 {
-	if (ActionState==EActionState::EAS_Attacking || ActionState==EActionState::EAS_UnoccupiedDisableAutoAttack)
+	if (ActionState!=EActionState::EAS_Unoccupied && ActionState!=EActionState::EAS_UnoccupiedDisableAutoAttack)
 	{
 		return;
+	}
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (AttackMontage)
+		{
+			AnimInstance->Montage_Stop(0.3f, AttackMontage);	
+			AttackEnd();
+		}
 	}
 
 	const FVector2D MoveVector = Value.Get<FVector2D>();
@@ -78,9 +86,18 @@ void AGameCharacter::Move(const FInputActionValue& Value)
 
 void AGameCharacter::Jump(const FInputActionValue& Value)
 {
-	if (ActionState==EActionState::EAS_Attacking || ActionState==EActionState::EAS_UnoccupiedDisableAutoAttack)
+	
+	if (ActionState!=EActionState::EAS_Unoccupied && ActionState!=EActionState::EAS_UnoccupiedDisableAutoAttack)
 	{
 		return;
+	}
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (AttackMontage)
+		{
+			AnimInstance->Montage_Stop(0.3f, AttackMontage);	
+			AttackEnd();
+		}
 	}
 	
 	ACharacter::Jump();
@@ -119,13 +136,13 @@ void AGameCharacter::DisarmKeyPressed(const FInputActionValue& Value)
 	{
 		HandleEquipMontage("Unequip");
 		CharacterState=ECharacterState::ECS_Unequipped;
-		OverlappingItem=nullptr;
+		ActionState = EActionState::EAS_EquippingWeapon;
 	}
 	else if (CanArm())
 	{
 		HandleEquipMontage("Equip");
 		CharacterState=ECharacterState::ECS_EquippedOneHandedWeapon;
-		OverlappingItem=EquippedWeapon;
+		ActionState = EActionState::EAS_EquippingWeapon;
 	}
 }
 
@@ -151,6 +168,10 @@ void AGameCharacter::StrongAttack(const FInputActionValue& Value)
 
 void AGameCharacter::HandleAttackMontage(EAttackType AttackType, bool bIsAutoAttack)
 {
+	if (GetCharacterMovement()->IsFalling())
+	{
+		return;
+	}
 	// If in an invalid state, cannot attack.
 	if (CannotAttack() || (bIsAutoAttack&&CannotAutoAttack()))
 	{
@@ -242,7 +263,8 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	    EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::Jump);
 		
 		// Trigger equip when pressed
-		EnhancedInputComponent->BindAction(EquipInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::InteractKeyPressed);
+		EnhancedInputComponent->BindAction(InteractInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::InteractKeyPressed);
+		EnhancedInputComponent->BindAction(EquipInputAction, ETriggerEvent::Triggered, this, &AGameCharacter::DisarmKeyPressed);
 		
 		// Trigger on attack
 		EnhancedInputComponent->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AGameCharacter::StartAttack);
@@ -273,13 +295,35 @@ bool AGameCharacter::CannotAutoAttack() const
 	return ActionState != EActionState::EAS_Unoccupied || GetCharacterState() == ECharacterState::ECS_Unequipped;
 }
 
+// Disarming and arming
 bool AGameCharacter::CanDisarm() const
 {
 	return ActionState == EActionState::EAS_Unoccupied && CharacterState!=ECharacterState::ECS_Unequipped;
 }
 
 bool AGameCharacter::CanArm() const
-{
+{	
 	return ActionState == EActionState::EAS_Unoccupied && CharacterState!=ECharacterState::ECS_EquippedOneHandedWeapon && EquippedWeapon;
+}
+
+void AGameCharacter::Disarm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(),"SwordSheatheSocket");
+	}
+}
+
+void AGameCharacter::Arm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(),"RightHandSocket");
+	}
+}
+
+void AGameCharacter::FinishEquipping()
+{
+	ActionState = EActionState::EAS_Unoccupied;
 }
 

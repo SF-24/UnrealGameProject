@@ -39,8 +39,11 @@ public:
 	UInputAction* JumpInputAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction* EquipInputAction;
+	UInputAction* InteractInputAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* EquipInputAction;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* AttackInputAction;
 	
@@ -76,6 +79,15 @@ protected:
 	bool CanDisarm() const;
 	bool CanArm() const;
 	bool CannotAttack() const;
+
+	UFUNCTION(BlueprintCallable)
+	void Disarm();
+	
+	UFUNCTION(BlueprintCallable)
+	void Arm();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishEquipping();
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true), Category = "State")

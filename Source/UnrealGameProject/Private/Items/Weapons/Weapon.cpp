@@ -1,9 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
  
 #include "Items/Weapons/Weapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 
-#include "Characters/GameCharacter.h"
-
+AWeapon::AWeapon()
+{
+	WeaponHitBox = CreateDefaultSubobject<UBoxComponent>(FName("WeaponHitBox"));
+	WeaponHitBox->SetupAttachment(GetRootComponent());
+}
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                               UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -17,11 +23,24 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	Super::OnSphereEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
 }
 
-void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
+void AWeapon::AttackMeshToSocket(USceneComponent* InParent, FName InSocketName)
 {
 	if (InParent) {
 		ItemMesh->AttachToComponent(InParent,FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false), InSocketName);		
-		ItemState=EItemState::EIS_Equipped;
+	}
+}
+
+void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
+{
+	AttackMeshToSocket(InParent, InSocketName);
+	ItemState=EItemState::EIS_Equipped;
+	if (EquipSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(),EquipSound,GetActorLocation());
+	}
+	if (SphereComponent)
+	{
+		SphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
 
